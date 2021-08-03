@@ -1,0 +1,28 @@
+[Unit]
+Description=revery server
+ConditionPathExists=/home/revery-user/revery/revery
+After=network.target
+
+[Service]
+Type=simple
+User=revery-user
+LimitNOFILE=256
+
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=60
+
+WorkingDirectory=/home/revery-user/revery/
+ExecStart=/home/revery-user/revery/revery
+
+# make sure log directory exists and owned by syslog
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /var/log/revery
+ExecStartPre=/bin/chown syslog:adm /var/log/revery
+ExecStartPre=/bin/chmod 755 /var/log/revery
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=revery
+
+[Install]
+WantedBy=multi-user.target

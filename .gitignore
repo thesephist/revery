@@ -1,2 +1,4 @@
+revery
+revery-*
 models/*.vec
 corpus/*.json
