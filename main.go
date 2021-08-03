@@ -51,6 +51,7 @@ func main() {
 			if url != "" {
 				article, err := readability.FromURL(url, 10*time.Second)
 				if err != nil {
+					w.WriteHeader(http.StatusBadRequest)
 					io.WriteString(w, "failed to read URL")
 				}
 
@@ -59,6 +60,7 @@ func main() {
 		}
 
 		if len(tokens) == 0 {
+			w.WriteHeader(http.StatusBadRequest)
 			io.WriteString(w, "invalid query")
 			return
 		}
@@ -67,6 +69,7 @@ func main() {
 		similarDocs := closestDocs(docs, docVector, maxResults)
 		respBytes, err := json.Marshal(similarDocs)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			io.WriteString(w, "error encoding JSON")
 			return
 		}
@@ -75,9 +78,7 @@ func main() {
 		w.Write(respBytes)
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		io.WriteString(w, "revery.thesephist.com\n")
-	})
+	http.Handle("/", http.FileServer(http.Dir("./static")))
 
 	log.Fatal(http.ListenAndServe(":9998", nil))
 }

@@ -9,10 +9,7 @@ import (
 	"strings"
 )
 
-type wordVector struct {
-	word   string
-	coords []float64
-}
+const vectorDims = 300
 
 type modelParser struct {
 	scanner *bufio.Scanner
@@ -24,20 +21,20 @@ func NewModelParser(rd io.Reader) modelParser {
 	}
 }
 
-func (p *modelParser) parse() ([]wordVector, error) {
-	wordVectors := []wordVector{}
+func (p *modelParser) parse() (map[string]([]float64), error) {
+	wordCoords := map[string]([]float64){}
 	for p.scanner.Scan() {
-		vec, err := parseModelLine(p.scanner.Text())
+		word, coords, err := parseModelLine(p.scanner.Text())
 		if err != nil {
-			return wordVectors, err
+			return wordCoords, err
 		}
 
-		wordVectors = append(wordVectors, vec)
+		wordCoords[word] = coords
 	}
-	return wordVectors, p.scanner.Err()
+	return wordCoords, p.scanner.Err()
 }
 
-func parseModelLine(line string) (wordVector, error) {
+func parseModelLine(line string) (string, []float64, error) {
 	words := strings.Split(strings.TrimSpace(line), " ")
 	coords := make([]float64, len(words)-1)
 
@@ -45,14 +42,11 @@ func parseModelLine(line string) (wordVector, error) {
 	for i, coordString := range words[1:] {
 		coords[i], err = strconv.ParseFloat(coordString, 64)
 		if err != nil {
-			return wordVector{}, err
+			return "", nil, err
 		}
 	}
 
-	return wordVector{
-		word:   words[0],
-		coords: coords,
-	}, nil
+	return words[0], coords, nil
 }
 
 type MonocleDoc struct {
@@ -84,14 +78,9 @@ func parseModelFile(modelPath string) (map[string]([]float64), error) {
 	defer modelFile.Close()
 
 	parser := NewModelParser(modelFile)
-	wordVectors, err := parser.parse()
+	wordCoords, err := parser.parse()
 	if err != nil {
 		return nil, err
-	}
-
-	wordCoords := map[string]([]float64){}
-	for _, wv := range wordVectors {
-		wordCoords[wv.word] = wv.coords
 	}
 
 	return wordCoords, err

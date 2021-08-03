@@ -14,10 +14,12 @@ func norm(a []float64) float64 {
 	return math.Sqrt(sum)
 }
 
-// equivalent to normalizedDistSqBetween, with better performance
 func cosineDistBetween(a, b []float64) float64 {
-	if len(a) != len(b) {
-		panic(fmt.Sprintf("len(a) != len(b) -- %d, %d", len(a), len(b)))
+	if len(a) != vectorDims {
+		panic(fmt.Sprintf("Vec a length mismatch: %d", len(a)))
+	}
+	if len(b) != vectorDims {
+		panic(fmt.Sprintf("Vec b length mismatch: %d", len(b)))
 	}
 
 	norms := norm(a) * norm(b)
@@ -30,20 +32,8 @@ func cosineDistBetween(a, b []float64) float64 {
 		dotProduct += ai * b[i]
 	}
 
-	// we return a negative here so that we can sort by cosine distance
+	// We return a negative here so that we can sort by cosine distance
 	return -dotProduct / norms
-}
-
-func closestWords(wordVectors []wordVector, wordCoord []float64, n int) []string {
-	sort.Slice(wordVectors, func(i, j int) bool {
-		return cosineDistBetween(wordCoord, wordVectors[i].coords) < cosineDistBetween(wordCoord, wordVectors[j].coords)
-	})
-
-	words := make([]string, n)
-	for i, w := range wordVectors[:n] {
-		words[i] = w.word
-	}
-	return words
 }
 
 func closestDocs(docSlice []MonocleDoc, docCoord []float64, n int) []MonocleDoc {
@@ -55,12 +45,7 @@ func closestDocs(docSlice []MonocleDoc, docCoord []float64, n int) []MonocleDoc 
 }
 
 func documentVector(wordCoords map[string]([]float64), words []string) []float64 {
-	if len(words) == 0 {
-		panic("documentVector: called with empty document!")
-	}
-
-	// TODO: dimensions shouldn't be hard-coded
-	docVec := make([]float64, 300)
+	docVec := make([]float64, vectorDims)
 
 	for _, word := range words {
 		coords, ok := wordCoords[word]
