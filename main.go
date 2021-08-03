@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -13,8 +13,15 @@ import (
 	readability "github.com/go-shiori/go-readability"
 )
 
+var punctRegExp = regexp.MustCompile(`[.,:;?!#%*()\[\]\{\}\\|\/<>~"\-_]`)
+
+func tokenize(text string) []string {
+	replaced := punctRegExp.ReplaceAllString(text, " ")
+	return strings.Fields(replaced)
+}
+
 func main() {
-	wordCoords, err := parseModelFile("./models/fasttext-commoncrawl-150k.vec")
+	wordCoords, err := parseModelFile("./models/fasttext-commoncrawl-50k.vec")
 	if err != nil {
 		log.Fatalln("Could not read model file:", err)
 	}
@@ -35,13 +42,14 @@ func main() {
 		}
 
 		query := req.URL.Query().Get("q")
-		tokens := strings.Fields(query)
+		tokens := tokenize(query)
 
 		if len(tokens) == 0 && req.Method == "POST" {
+			fmt.Println(tokens)
 			// maybe POST with data?
 			body, err := io.ReadAll(req.Body)
 			if err == nil {
-				tokens = strings.Fields(string(body))
+				tokens = tokenize(string(body))
 			}
 		}
 
@@ -55,7 +63,7 @@ func main() {
 					io.WriteString(w, "failed to read URL")
 				}
 
-				tokens = strings.Fields(article.Title + " " + article.TextContent)
+				tokens = tokenize(article.Title + " " + article.TextContent)
 			}
 		}
 
@@ -67,7 +75,7 @@ func main() {
 
 		docVector := documentVector(wordCoords, tokens)
 		similarDocs := closestDocs(docs, docVector, maxResults)
-		respBytes, err := json.Marshal(similarDocs)
+		respBytes, err := serializeDocs(similarDocs)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			io.WriteString(w, "error encoding JSON")

@@ -59,6 +59,14 @@ type MonocleDoc struct {
 	coords  []float64
 }
 
+type SerializedMonocleDoc struct {
+	Title   string `json:"title"`
+	Href    string `json:"href"`
+	Id      string `json:"id"`
+	Module  string `json:"module"`
+	Content string `json:"content"`
+}
+
 func (d *MonocleDoc) weightedTokenList() []string {
 	words := make([]string, 0, len(d.Tokens))
 	for token, count := range d.Tokens {
@@ -67,6 +75,21 @@ func (d *MonocleDoc) weightedTokenList() []string {
 		}
 	}
 	return words
+}
+
+func serializeDocs(docs []MonocleDoc) ([]byte, error) {
+	serializedDocs := make([]SerializedMonocleDoc, len(docs))
+	for i, doc := range docs {
+		serializedDocs[i] = SerializedMonocleDoc{
+			Title:   doc.Title,
+			Href:    doc.Href,
+			Id:      doc.Id,
+			Module:  doc.Module,
+			Content: doc.Content,
+		}
+	}
+
+	return json.Marshal(serializedDocs)
 }
 
 func parseModelFile(modelPath string) (map[string]([]float64), error) {
