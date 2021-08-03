@@ -45,7 +45,6 @@ func main() {
 		tokens := tokenize(query)
 
 		if len(tokens) == 0 && req.Method == "POST" {
-			fmt.Println(tokens)
 			// maybe POST with data?
 			body, err := io.ReadAll(req.Body)
 			if err == nil {

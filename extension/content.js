@@ -6,7 +6,7 @@ const {
 
 const MAX_RESULTS = 20;
 
-const REVERY_ORIGIN = 'http://localhost:9998';
+const REVERY_ORIGIN = 'https://revery.linus.zone';
 
 const SHADOW_STYLES = `
     .revery-root {
