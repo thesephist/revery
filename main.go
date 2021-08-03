@@ -96,6 +96,10 @@ func main() {
 		w.Write(respBytes)
 	})
 
+	http.HandleFunc("/js/token.js", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Add("Content-Type", "application/javascript")
+		io.WriteString(w, fmt.Sprintf("const REVERY_TOKEN = `%s`;", strings.TrimSpace(reveryToken)))
+	})
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
 	log.Fatal(http.ListenAndServe(":9998", nil))

@@ -25,6 +25,7 @@ async function fetchSimilarDocs(searchType, query) {
     const url = new URL(location.origin);
     url.pathname = '/similar';
     url.searchParams.set('n', MAX_RESULTS);
+    url.searchParams.set('token', REVERY_TOKEN);
 
     try {
         let resp;
