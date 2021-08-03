@@ -40,7 +40,7 @@ func main() {
 
 	// web server
 	http.HandleFunc("/similar", func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Query().Get("token") != reveryToken {
+		if req.URL.Query().Get("token") != strings.TrimSpace(reveryToken) {
 			w.WriteHeader(http.StatusUnauthorized)
 			io.WriteString(w, "not authorized")
 			return
