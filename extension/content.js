@@ -30,7 +30,7 @@ const SHADOW_STYLES = `
         right: 8px;
         width: calc(100vw - 16px);
         max-width: 400px;
-        z-index: 9999999999999;
+        z-index: 2147483647;
         border-radius: 6px;
         color: var(--primary-text);
         background: var(--primary-bg);
@@ -208,6 +208,7 @@ async function fetchSimilarToText(text) {
     const url = new URL(REVERY_ORIGIN);
     url.pathname = '/similar';
     url.searchParams.set('n', MAX_RESULTS);
+    url.searchParams.set('token', REVERY_TOKEN);
 
     try {
         const resp = await fetch(url, {

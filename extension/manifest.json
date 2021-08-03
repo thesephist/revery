@@ -14,7 +14,7 @@
     "content_scripts": [
         {
             "matches": ["*://*/*"],
-            "js": ["Readability.js",  "torus.min.js", "content.js"],
+            "js": ["Readability.js",  "torus.min.js", "token.js", "content.js"],
             "run_at": "document_idle"
         }
     ],

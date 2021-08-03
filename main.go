@@ -13,6 +13,9 @@ import (
 	readability "github.com/go-shiori/go-readability"
 )
 
+//go:embed tokens.txt
+var reveryToken string
+
 var punctRegExp = regexp.MustCompile(`[.,:;?!#%*()\[\]\{\}\\|\/<>~"\-_]`)
 
 func tokenize(text string) []string {
@@ -35,6 +38,12 @@ func main() {
 
 	// web server
 	http.HandleFunc("/similar", func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Query().get("token") != reveryToken {
+			w.WriteHeader(http.StatusNotAuthorized)
+			io.WriteString(w, "not authorized")
+			return
+		}
+
 		maxResultsString := req.URL.Query().Get("n")
 		maxResults, err := strconv.Atoi(maxResultsString)
 		if err != nil {
