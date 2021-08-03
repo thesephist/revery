@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	_ "embed"
+
 	readability "github.com/go-shiori/go-readability"
 )
 
@@ -38,8 +40,8 @@ func main() {
 
 	// web server
 	http.HandleFunc("/similar", func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Query().get("token") != reveryToken {
-			w.WriteHeader(http.StatusNotAuthorized)
+		if req.URL.Query().Get("token") != reveryToken {
+			w.WriteHeader(http.StatusUnauthorized)
 			io.WriteString(w, "not authorized")
 			return
 		}
