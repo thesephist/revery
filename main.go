@@ -84,7 +84,7 @@ func main() {
 		}
 
 		docVector := documentVector(wordCoords, tokens)
-		similarDocs := closestDocs(docs, docVector, maxResults)
+		similarDocs := closestDocs(docs[:], docVector, maxResults)
 		respBytes, err := serializeDocs(similarDocs)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
