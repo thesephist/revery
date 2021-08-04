@@ -4,7 +4,7 @@
 
 ![Revery's browser extension and web interface running on an iPad and a laptop](static/img/revery-devices.png)
 
-Unlike most of my side projects, because of the size of data and amount of computational work Revery requires, its backend is written in Go. Both clients -- the web app and the browser extension -- are buitl with [Torus](https://github.com/thesephist/torus).
+Unlike most of my side projects, because of the size of data and amount of computational work Revery requires, its backend is written in Go. Both clients -- the web app and the browser extension -- are built with [Torus](https://github.com/thesephist/torus).
 
 Although it works well enough for me to use it every day, Revery is more of a proof-of-concept prototype than a finished product. I wanted to demonstrate that a tool like this could be built for personal use on top of personal productivity tools like notes and bookmarks, and experience what it would feel like to browse the web and write with such a tool.
 
@@ -20,11 +20,11 @@ The Revery browser extension lives inside `./extension` in this repository, and 
 
 Where Monocle, with its keyword-based search algorithm, is good for recollection, I've found the Revery extension great for **explorations on a specific topic**. If I'm reading about natural language processing, for example, I can hit a few keystrokes to bring up other articles I've read, or notes I've taken in the past, that I can mentally reference as I read and learn about new ideas in NLP.
 
-**We learn new ideas best when we can find existing referene points in our memory onto which we can attach new information. Revery's extension partly automates and speeds up that task.** For example, while reading an article about South Korea's unique cultural and economic position in the world, Revery surfaced a few related newsletters and articles from completely different authors and sources on Korean pop culture and its population decline, which helped me frame what I was reading in a much more broad, well-informed context.
+**We learn new ideas best when we can find existing reference points in our memory onto which we can attach new information. Revery's extension partly automates and speeds up that task.** For example, while reading an article about South Korea's unique cultural and economic position in the world, Revery surfaced a few related newsletters and articles from completely different authors and sources on Korean pop culture and its population decline, which helped me frame what I was reading in a much more broad, well-informed context.
 
 ### Web interface
 
-The web search interface, to me, is a bit secondary to the extension. It exists primariliy as a demonstration of Revery's underlying technology, and also incidentally as a way for me to use Revery when the extension isn't available (like on a mobile browser).
+The web search interface, to me, is a bit secondary to the extension. It exists primarily as a demonstration of Revery's underlying technology, and also incidentally as a way for me to use Revery when the extension isn't available (like on a mobile browser).
 
 ![Revery's web interface showing a list of results](static/img/revery-search-horizontal.png)
 
@@ -42,7 +42,7 @@ First, we'll need to understand **[word embeddings](https://en.wikipedia.org/wik
 
 Although the concept of word embeddings is not very new, there is still active research producing new methods for generating more and more accurate and useful word embeddings from the same corpus of data. My personal deployment of Revery uses the Creative Commons-licensed word embedding dataset produced by Facebook's [FastText](https://fasttext.cc/docs/en/support.html) tool, specifically a 50,000-word dataset with 300 dimensions trained on the [Common Crawl](https://commoncrawl.org/the-data/) corpus.
 
-Word embeddings let us draw inferences about which _words_ are related, but for Revery, we want to draw the same kind of inference about _documents_, which are a list of words. Thankfully, there's ample literature to suggest that simply taking a weighted average of word vectors for every word in a document can get us a good approximation of a "document vector" that represents the document as a whole. Though there are more advanced methods we can use, like [paragraph vectors](https://arxiv.org/abs/1507.07998) or models that take word order into account like BERT, averaging word vectors works well enough for Revery's use cases, and is simple  to implement and test, so Revery sticks witih this approach.
+Word embeddings let us draw inferences about which _words_ are related, but for Revery, we want to draw the same kind of inference about _documents_, which are a list of words. Thankfully, there's ample literature to suggest that simply taking a weighted average of word vectors for every word in a document can get us a good approximation of a "document vector" that represents the document as a whole. Though there are more advanced methods we can use, like [paragraph vectors](https://arxiv.org/abs/1507.07998) or models that take word order into account like BERT, averaging word vectors works well enough for Revery's use cases, and is simple  to implement and test, so Revery sticks with this approach.
 
 Once we can generate document vectors out of documents using our word embedding, the rest of the algorithm falls into place. On startup, Revery's API server indexes and generates document vectors for all of the documents it can find in my dataset (which isn't too large -- around 25,000 at time of writing), and on every request, the algorithm computes a document vector for the requested document, and sorts every document in the search index by its cosine distance to the query document, to return some top _n_ results.
 
@@ -69,14 +69,14 @@ Revery has two independent codebases in the same repository. The first is the Ch
 	```js
 	const REVERY_TOKEN = '<some API key here>';
 	```
-2. I go to `chrome://extensions` and click "Load unpacked" to load the `./extension` folder as an "unpacked extension" into my browser, which willl make the extension available in every tab.
+2. I go to `chrome://extensions` and click "Load unpacked" to load the `./extension` folder as an "unpacked extension" into my browser, which will make the extension available in every tab.
 
 That's it for the extension setup. Next, I set up the server:
 
 1. Take the same authentication token from above, and place just the token string itself inside `tokens.txt` in the root of the project folder. The Revery server will grab the whitespace-trimmed content of this file and use it as the API key.
 2. Simply running `make` will build the `revery` binary executable into the project folder.
 3. Revery needs two extra sets of data to work: the word embedding model, and Monocle's document dataset.
-	- Download a word embedding file (for example, from [FastText](https://fasttext.cc/docs/en/english-vectors.html)) and trim it to some reasonble size (top 50-100k words seems to work well). Trim the first line, which usually indicates the total word count and number of dimensions. Revery's code assumes 300 dimensions, so if this is not the case, revise the code.
+	- Download a word embedding file (for example, from [FastText](https://fasttext.cc/docs/en/english-vectors.html)) and trim it to some reasonable size (top 50-100k words seems to work well). Trim the first line, which usually indicates the total word count and number of dimensions. Revery's code assumes 300 dimensions, so if this is not the case, revise the code.
 	- Copy Monocle's `docs.json` document dataset generated by the indexer to `./corpus/docs.json`.
 4. Running the `revery` executable now should correctly pre-process the model and search index, and start the web application server.
 
