@@ -97,7 +97,7 @@ On the code side:
 
 There is also plenty of great prior art in this space. Though I can't list them all here, there are a few that stand out as inspirations for Revery.
 
-- [Monocle](), the direct predecessor to Revery that uses the same dataset for keyword search
+- [Monocle](https://github.com/thesephist/monocle), the direct predecessor to Revery that uses the same dataset for keyword search
 - [same.energy](https://jacobjackson.com/searching-for-style/), which enables searching for tweets or photos of the same "style" using a transformer model
 - [Semantica](https://psionica.org/tools/semantica/), which uses word embeddings to provide a lower-level tool to explore relationships between individual words and concepts
 - [Tyler Angert's _Information forest_](https://tyler.cafe/information_forest?utm_source=pocket_mylist), an imaginative note about web browsers of the future
