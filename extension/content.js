@@ -75,6 +75,32 @@ const SHADOW_STYLES = `
         background: var(--hover-bg);
     }
 
+    details.summary {
+        padding: 6px 12px;
+        line-height: 1.4em;
+        border-bottom: 1px solid var(--active-bg);
+    }
+
+    details.summary summary {
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin: -2px -6px;
+    }
+
+    details.summary summary:hover {
+        background: var(--hover-bg);
+    }
+
+    ul.summaryText {
+        padding-left: 18px;
+        margin: 8px 0 0 0;
+    }
+
+    .summaryText li {
+        margin-bottom: 8px;
+    }
+
     .doc-list {
         max-height: calc(100vh - 64px);
         overflow-y: auto;
@@ -158,6 +184,105 @@ function ellipsize(s, chars) {
     return s.substr(0, chars) + '...';
 }
 
+
+// algorithm ported from github.com/thesephist/micropress
+// Unlike Micropress, summarize() here:
+// - infers the desired length of summary automatically
+// - returns an array of sentences, not a string
+function summarize(text) {
+    const maxChars = Math.min(1000, 50 + text.length * 0.1);
+
+    const STOPWORDS = [
+        'a', 'about', 'an', 'are', 'and', 'as', 'at', 'be', 'but', 'by', 'com',
+        'do', 'don\'t', 'for', 'from', 'has', 'have', 'he', 'his', 'i', 'i\'m',
+        'in', 'is', 'it', 'it\'s', 'just', 'like', 'me', 'my', 'not', 'of',
+        'on', 'or', 'so', 't', 'that', 'the', 'they', 'this', 'to', 'was',
+        'we', 'were', 'with', 'you', 'your',
+    ];
+
+    function tokenize(text) {
+        const tokens = text.trim()
+            .toLowerCase()
+            .replaceAll(/[.,:;?!#%*()\[\]{}\\|/<>!"\-_]/g, ' ')
+            .split(/\s+/)
+            .filter(w => !STOPWORDS.includes(w));
+
+        return tokens.reduce((acc, t) => {
+            if (acc.has(t)) {
+                acc.set(t, acc.get(t) + 1);
+            } else {
+                acc.set(t, 1);
+            }
+            return acc;
+        }, new Map());
+    }
+
+    function tokensIntersectionScore(tok1, tok2) {
+        const len1 = Array.from(tok1.values()).reduce((a, b) => a + b, 0);
+        const len2 = Array.from(tok2.values()).reduce((a, b) => a + b, 0);
+
+        if (len1 < 4 || len2 < 4) {
+            return 0;
+        }
+
+        let sum = 0;
+        for (const key of tok1.keys()) {
+            if (tok2.has(key)) {
+                sum += tok1.get(key) + tok2.get(key);
+            }
+        }
+        return sum / (len1 + len2 + 1);
+    }
+
+    function upcaseFirstLetter(s) {
+        return s[0].toUpperCase() + s.substr(1);
+    }
+
+    function stripTransition(sent) {
+        switch (sent.substr(0, 4).toLowerCase()) {
+            case 'and ':
+            case 'but ':
+                return upcaseFirstLetter(sent.substr(4));
+            case 'and,':
+            case 'but,':
+                return upcaseFirstLetter(sent.substr(5));
+        }
+        return sent;
+    }
+
+    const paragraphs = text.split('\n\n').filter(s => s !== '').map(s => s.replaceAll(/\s+/g, ' '));
+    const paragraphSentences = paragraphs.map(para => para.split(/[.?!] /g));
+    const allSentences = paragraphSentences
+        .flat()
+        .map(sent => sent.trimEnd('.'))
+        .filter(s => s !== '');
+
+    const sentenceOrder = allSentences.reduce((acc, sent, i) => {
+        acc.set(sent, i);
+        return acc;
+    }, new Map());
+    const allTokens = allSentences.map(tokenize);
+
+    const ranks = allSentences.reduce((ranks, sent, i) => {
+        const tokens = allTokens[i];
+        const score = allTokens.reduce((sum, other) => sum - tokensIntersectionScore(tokens, other), 0);
+        ranks.set(sent, score);
+        return ranks;
+    }, new Map());
+    allSentences.sort((sent1, sent2) => ranks.get(sent1) - ranks.get(sent2));
+
+    let i = 0;
+    const summarySentences = [];
+    while (summarySentences.join(' ').length < maxChars && allSentences[i]) {
+        summarySentences.push(allSentences[i++]);
+    }
+    summarySentences.sort((sent1, sent2) => sentenceOrder.get(sent1) - sentenceOrder.get(sent2));
+
+    return summarySentences
+        .map(stripTransition)
+        .map(sent => sent + '.');
+}
+
 class App extends Component {
     init(state) {
         this._openDocs = new Set();
@@ -168,7 +293,7 @@ class App extends Component {
         return this._openDocs.has(doc.id);
     }
 
-    compose({ loading, docs }) {
+    compose({ summary, loading, docs }) {
         return jdom`<div class="revery-root">
             <header>
                 <div class="logo"><strong>Revery</storng> semantic search</div>
@@ -176,8 +301,13 @@ class App extends Component {
             </header>
             ${loading ? jdom`<div class="loading-container">
                 <div class="loading"></div>
-            </div>` : null}
-            <div class="doc-list">
+            </div>` : jdom`<div class="doc-list">
+                <details class="summary" open>
+                    <summary>Key points</summary>
+                    <ul class="summaryText">
+                        ${summary.map(sent => jdom`<li>${sent}</li>`)}
+                    </ul>
+                </details>
                 ${docs.map(doc => {
                     return jdom`<div class="doc-item">
                         <div class="doc-title">${doc.title}</div>
@@ -199,7 +329,7 @@ class App extends Component {
                             }}>${this.isDocOpen(doc) ? doc.content : ellipsize(doc.content, 280)}</div>
                     </div>`
                 })}
-            </div>
+            </div>`}
         </div>`;
     }
 }
@@ -223,17 +353,17 @@ async function fetchSimilarToText(text) {
     }
 }
 
-function fetchSimilarDocs() {
+function getPageContent() {
     const selection = window.getSelection().toString().trim();
     if (selection) {
-        return fetchSimilarToText(selection);
+        return selection;
     }
 
     const readability = new Readability(document.cloneNode(true), {
         charThreshold: 20,
     });
     const article = readability.parse();
-    return fetchSimilarToText(article.textContent);
+    return article.textContent;
 }
 
 const shadowContainer = document.createElement('div');
@@ -262,7 +392,9 @@ chrome.runtime.onMessage.addListener(async (msg) => {
             shadowRoot.appendChild(style);
 
             // app
+            const content = getPageContent();
             const state = new Record({
+                summary: summarize(content),
                 loading: true,
                 docs: [],
             });
@@ -270,7 +402,7 @@ chrome.runtime.onMessage.addListener(async (msg) => {
             shadowRoot.appendChild(app.node);
 
             // update when data is available
-            const docs = await fetchSimilarDocs();
+            const docs = await fetchSimilarToText(content);
             state.update({
                 loading: false,
                 docs,
